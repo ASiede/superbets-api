@@ -1,7 +1,7 @@
 "use strict";
 
 exports.DATABASE_URL =
-	process.env.DATABASE_URL || "mongodb://asiede:SashaB00ne@ds119650.mlab.com:19650/ourtinerary-app";
+	process.env.DATABASE_URL || "mongodb://asiede:patssuck1@ds117545.mlab.com:17545/superbets";
 
 exports.TEST_DATABASE_URL =
 	process.env.TEST_DATABASE_URL || 
