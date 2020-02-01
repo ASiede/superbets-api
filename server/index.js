@@ -67,7 +67,7 @@ app.get('/betevent/:id', (req, res) => {
 
 // Post enpoint for new betEvent
 app.post('/betevent', jsonParser, (req, res) => {
-  const requiredFields = ['name', 'other'];
+  const requiredFields = ['name'];
   for (let i = 0; i < requiredFields.length; i += 1) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -79,7 +79,6 @@ app.post('/betevent', jsonParser, (req, res) => {
   BetEvent
     .create({
       name: req.body.name,
-      other: req.body.other,
       password: req.body.password
     })
     .then((bet) => {
@@ -99,7 +98,7 @@ app.put('/betevent/:id', jsonParser, (req, res) => {
       `Request path id (${req.params.id}) and request body id `
       + `(${req.body.id}) must match`);
     console.error(message);
-    return res.status(400).json({ message: message });
+    return res.status(400).json({ message });
   }
   const toUpdate = {};
   const updateableFields = ['name', 'password', 'questions'];
@@ -108,11 +107,12 @@ app.put('/betevent/:id', jsonParser, (req, res) => {
       toUpdate[field] = req.body[field];
     }
   });
-  console.log('toupdate', toUpdate)
   BetEvent
-    .findOneAndUpdate({_id:req.params.id}, { $set: toUpdate }, {new: true})
-    .then((trip) => res.status(201).json(trip.serialize()))
-    .catch((err) => res.status(500).json({ message: 'Internal server error' }));
+    .findOneAndUpdate({ _id: req.params.id }, toUpdate, { new: true })
+    .then((betevent) => {
+      res.status(201).json(betevent);
+    })
+    .catch((err) => res.status(500).json({ message: `Internal server error: ${err}` }));
 });
 
 // GET endpoint for submission by id
@@ -121,8 +121,7 @@ app.get('/submission/:id', (req, res) => {
     .findById(req.params.id)
     .then((submission) => res.status(200).json(submission))
     .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: `Internal server error: ${err}` });
     });
 });
 
