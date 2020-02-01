@@ -11,7 +11,6 @@ const betEventSchema = mongoose.Schema({
     required: true,
     unique: true
   },
-  other: { type: String },
   password: {
     type: String,
     required: true
@@ -72,7 +71,8 @@ const userSchema = mongoose.Schema({
 
 userSchema.methods.serialize = function() {
   return {
-    id: this._id,
+    id: this.id,
+    // id: this._id,
     username: this.username,
     password: this.password,
     firstName: this.firstName,
