@@ -53,6 +53,18 @@ app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
+// GET endpoint for all bet events
+app.get('/betevent', (req, res) => {
+  BetEvent
+    .find()
+    .then((betEvents) => {
+      res.json({ betEvents });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: `Internal server error: ${err}` });
+    });
+});
+
 // GET endpoint for bet events by id
 app.get('/betevent/:id', (req, res) => {
   BetEvent
