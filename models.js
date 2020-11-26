@@ -1,5 +1,3 @@
-'use strict';
-
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
@@ -15,6 +13,7 @@ const betEventSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }]
 });
 
