@@ -86,12 +86,16 @@ const findEventByName = async (eventIds, name) => {
 };
 
 // GET event by username and eventName
-app.get('/username/:username/eventname/:eventname', async (req, res) => {
-  const { username, eventname } = req.params;
-  if (!username || !eventname) {
-    return res.status(400).send('Missing username or eventname');
-  }
+app.get('/eventname/:encoded', async (req, res) => {
+  const { encoded } = req.params;
+  const decoded = Buffer.from(encoded, 'base64').toString();
+  const names = decoded.split(':');
+  const username = names[0];
+  const eventname = names[1];
   const user = await User.findOne({ username });
+  if (!user) {
+    res.status(404).end();
+  }
   const event = await findEventByName(user.betEvents, eventname);
   if (event) {
     res.status(200).json(event);
