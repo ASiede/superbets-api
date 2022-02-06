@@ -1,47 +1,47 @@
-const express = require("express");
-const bodyParser = require("body-parser");
+const express = require('express');
+const bodyParser = require('body-parser');
 
-const { User } = require("../models");
+const { User } = require('../models');
 
 const router = express.Router();
 
 const jsonParser = bodyParser.json();
 
 // Post to register a new user
-router.post("/", jsonParser, (req, res) => {
-  const requiredFields = ["username", "password", "email"];
+router.post('/', jsonParser, (req, res) => {
+  const requiredFields = ['username', 'password', 'email'];
   const missingField = requiredFields.find((field) => !(field in req.body));
   if (missingField) {
     return res.status(422).json({
       code: 422,
-      reason: "ValidationError",
-      message: "Missing field",
-      location: missingField,
+      reason: 'ValidationError',
+      message: 'Missing field',
+      location: missingField
     });
   }
 
   const stringFields = [
-    "username",
-    "password",
-    "firstName",
-    "lastName",
-    "email",
+    'username',
+    'password',
+    'firstName',
+    'lastName',
+    'email'
   ];
   const nonStringField = stringFields.find(
-    (field) => field in req.body && typeof req.body[field] !== "string"
+    (field) => field in req.body && typeof req.body[field] !== 'string'
   );
 
   if (nonStringField) {
     return res.status(422).json({
       code: 422,
-      reason: "ValidationError",
-      message: "Incorrect field type: expected string",
-      location: nonStringField,
+      reason: 'ValidationError',
+      message: 'Incorrect field type: expected string',
+      location: nonStringField
     });
   }
 
   // Check to make sure inputs dont start or end with blank spaces
-  const explicityTrimmedFields = ["username", "password", "email"];
+  const explicityTrimmedFields = ['username', 'password', 'email'];
   const nonTrimmedField = explicityTrimmedFields.find(
     (field) => req.body[field].trim() !== req.body[field]
   );
@@ -49,44 +49,44 @@ router.post("/", jsonParser, (req, res) => {
   if (nonTrimmedField) {
     return res.status(422).json({
       code: 422,
-      reason: "ValidationError",
-      message: "Cannot start or end with whitespace",
-      location: nonTrimmedField,
+      reason: 'ValidationError',
+      message: 'Cannot start or end with whitespace',
+      location: nonTrimmedField
     });
   }
 
   const sizedFields = {
     username: {
       min: 1,
-      max: 15,
+      max: 15
     },
     password: {
       min: 8,
-      max: 72,
-    },
+      max: 72
+    }
   };
   const tooSmallField = Object.keys(sizedFields).find(
     (field) =>
-      "min" in sizedFields[field] &&
+      'min' in sizedFields[field] &&
       req.body[field].trim().length < sizedFields[field].min
   );
   const tooLargeField = Object.keys(sizedFields).find(
     (field) =>
-      "max" in sizedFields[field] &&
+      'max' in sizedFields[field] &&
       req.body[field].trim().length > sizedFields[field].max
   );
 
   if (tooSmallField || tooLargeField) {
     return res.status(422).json({
       code: 422,
-      reason: "ValidationError",
+      reason: 'ValidationError',
       message: tooSmallField
         ? `Must be at least ${sizedFields[tooSmallField].min} characters long`
         : `Must be at most ${sizedFields[tooLargeField].max} characters long`,
-      location: tooSmallField || tooLargeField,
+      location: tooSmallField || tooLargeField
     });
   }
-  let { username, password, email, firstName = "", lastName = "" } = req.body;
+  let { username, password, email, firstName = '', lastName = '' } = req.body;
   firstName = firstName.trim();
   lastName = lastName.trim();
   email = email.toLowerCase();
@@ -98,19 +98,19 @@ router.post("/", jsonParser, (req, res) => {
       if (emailAlreadyExists > 0) {
         return res.status(422).json({
           code: 422,
-          reason: "ValidationError",
-          message: "Email already used for another account",
-          location: email,
+          reason: 'ValidationError',
+          message: 'Email already used for another account',
+          location: email
         });
       }
     })
     .catch((err) => {
       // Forward validation errors on to the client, otherwise give a 500
       // error because something unexpected has happened
-      if (err.reason === "ValidationError") {
+      if (err.reason === 'ValidationError') {
         return res.status(err.code).json(err);
       }
-      res.status(500).json({ code: 500, message: "Internal server error" });
+      res.status(500).json({ code: 500, message: 'Internal server error' });
     });
 
   return User.find({ username })
@@ -120,9 +120,9 @@ router.post("/", jsonParser, (req, res) => {
         // There is an existing user with the same username
         return res.status(422).json({
           code: 422,
-          reason: "ValidationError",
-          message: "Username already taken",
-          location: "username",
+          reason: 'ValidationError',
+          message: 'Username already taken',
+          location: 'username'
         });
       }
       // If there is no existing user, hash the password
@@ -135,7 +135,7 @@ router.post("/", jsonParser, (req, res) => {
         firstName,
         lastName,
         email,
-        betEvents: [],
+        betEvents: []
       });
     })
     .then((user) => {
@@ -144,35 +144,37 @@ router.post("/", jsonParser, (req, res) => {
     .catch((err) => {
       // Forward validation errors on to the client, otherwise give a 500
       // error because something unexpected has happened
-      if (err.reason === "ValidationError") {
+      if (err.reason === 'ValidationError') {
         return res.status(err.code).json(err);
       }
-      res.status(500).json({ code: 500, message: "Internal server error" });
+      res.status(500).json({ code: 500, message: 'Internal server error' });
     });
 });
 
 // Get users
-router.get("/", (req, res) => {
+router.get('/', (req, res) => {
   return User.find()
     .then((users) => {
       res.json({
-        users: users.map((user) => user.serialize()),
+        users: users.map((user) => user.serialize())
       });
     })
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: 'Internal server error' });
     });
 });
 
 // Get user by ID
-router.get("/:id", (req, res) => {
+router.get('/:id', (req, res) => {
+  console.log('yuck ids', req.params.id);
+
   User.findById(req.params.id)
     .then((user) => {
       res.json(user.serialize());
     })
     .catch((err) => {
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: 'Internal server error' });
     });
 });
 
