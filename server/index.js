@@ -1,20 +1,20 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const morgan = require("morgan");
-const passport = require("passport");
+const express = require('express');
+const mongoose = require('mongoose');
+const morgan = require('morgan');
+const passport = require('passport');
 // const cors = require('cors');
-const path = require("path");
-const nodeMailer = require("nodemailer");
-require("dotenv").config();
-const bodyParser = require("body-parser");
+// const path = require('path');
+// const nodeMailer = require('nodemailer');
+require('dotenv').config();
+const bodyParser = require('body-parser');
 
-const { router: usersRouter } = require("../users");
-const { router: authRouter, localStrategy, jwtStrategy } = require("../auth");
+const { router: usersRouter } = require('../users');
+const { router: authRouter, localStrategy, jwtStrategy } = require('../auth');
 
 mongoose.Promise = global.Promise;
 
-const { PORT, DATABASE_URL } = require("../config");
-const { User, BetEvent, Submission } = require("../models");
+const { PORT, DATABASE_URL } = require('../config');
+const { User, BetEvent, Submission } = require('../models');
 
 const jsonParser = bodyParser.json();
 const app = express();
@@ -28,44 +28,33 @@ const app = express();
 // );
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
   res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
   );
   next();
 });
 
-app.use(express.static("public"));
+app.use(express.static('public'));
 app.use(express.json());
-app.use(morgan("common"));
+app.use(morgan('common'));
 
 passport.use(localStrategy);
 passport.use(jwtStrategy);
 
-app.use("/users", usersRouter);
-app.use("/auth/", authRouter);
+app.use('/users', usersRouter);
+app.use('/auth/', authRouter);
 
-const jwtAuth = passport.authenticate("jwt", { session: false });
+// const jwtAuth = passport.authenticate('jwt', { session: false });
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.json({ ok: true });
 });
 
-// GET endpoint for all bet events
-app.get("/betevents", (req, res) => {
-  BetEvent.find()
-    .then((betEvents) => {
-      res.json({ betEvents });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: `Internal server error: ${err}` });
-    });
-});
-
 // GET endpoint for all bet events of one user
-app.get("/betevents/:user", (req, res) => {
+app.get('/betevents/:user', (req, res) => {
   const userId = req.params.user;
   BetEvent.find({ createdBy: userId })
     .exec()
@@ -77,19 +66,43 @@ app.get("/betevents/:user", (req, res) => {
     });
 });
 
-// GET endpoint for bet events by id
-app.get("/betevent/:id", (req, res) => {
+// GET event by id
+app.get('/betevent/:id', (req, res) => {
   BetEvent.findById(req.params.id)
     .then((bet) => res.status(200).json(bet))
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: 'Internal server error' });
     });
 });
 
+const findEventByName = async (eventIds, name) => {
+  for (const eventId of eventIds) {
+    const foundEvent = await BetEvent.findById(eventId);
+    if (foundEvent.name === name) {
+      return foundEvent;
+    }
+  }
+};
+
+// GET event by username and eventName
+app.get('/username/:username/eventname/:eventname', async (req, res) => {
+  const { username, eventname } = req.params;
+  if (!username || !eventname) {
+    return res.status(400).send('Missing username or eventname');
+  }
+  const user = await User.findOne({ username });
+  const event = await findEventByName(user.betEvents, eventname);
+  if (event) {
+    res.status(200).json(event);
+  } else {
+    res.status(404).end();
+  }
+});
+
 // Post endpoint for new betEvent
-app.post("/betevent", jsonParser, async (req, res) => {
-  const requiredFields = ["name"];
+app.post('/betevent', jsonParser, async (req, res) => {
+  const requiredFields = ['name'];
   // check for required fields
   for (let i = 0; i < requiredFields.length; i += 1) {
     const field = requiredFields[i];
@@ -111,7 +124,7 @@ app.post("/betevent", jsonParser, async (req, res) => {
     if (dupeFound) {
       res.status(400).json({
         message:
-          "You already have a Bet Event by this name. Please use a unique name for this Bet Event",
+          'You already have a Bet Event by this name. Please use a unique name for this Bet Event'
       });
     }
   }
@@ -120,7 +133,7 @@ app.post("/betevent", jsonParser, async (req, res) => {
     name: req.body.name,
     // password: req.body.password,
     questions: req.body.questions,
-    createdBy: req.body.createdBy,
+    createdBy: req.body.createdBy
   })
     .then(async (bet) => {
       // persist eventId to user
@@ -138,7 +151,7 @@ app.post("/betevent", jsonParser, async (req, res) => {
 });
 
 // PUT endpoint for editing BetEvents
-app.put("/betevent/:id", jsonParser, (req, res) => {
+app.put('/betevent/:id', jsonParser, (req, res) => {
   // ensure that the id in the request path and the one in request body match
   if (!(req.params.id && req.body.id && req.params.id === req.body.id)) {
     const message =
@@ -148,7 +161,7 @@ app.put("/betevent/:id", jsonParser, (req, res) => {
     return res.status(400).json({ message });
   }
   const toUpdate = {};
-  const updateableFields = ["name", "password", "questions"];
+  const updateableFields = ['name', 'questions', 'confirmed'];
   updateableFields.forEach((field) => {
     if (field in req.body) {
       toUpdate[field] = req.body[field];
@@ -164,7 +177,7 @@ app.put("/betevent/:id", jsonParser, (req, res) => {
 });
 
 // GET endpoint for submission by id
-app.get("/submission/:id", (req, res) => {
+app.get('/submission/:id', (req, res) => {
   Submission.findById(req.params.id)
     .then((submission) => res.status(200).json(submission))
     .catch((err) => {
@@ -173,8 +186,8 @@ app.get("/submission/:id", (req, res) => {
 });
 
 // Post enpoint for new submission
-app.post("/submission", jsonParser, (req, res) => {
-  const requiredFields = ["bettor"];
+app.post('/submission', jsonParser, (req, res) => {
+  const requiredFields = ['bettor'];
   for (let i = 0; i < requiredFields.length; i += 1) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -184,14 +197,14 @@ app.post("/submission", jsonParser, (req, res) => {
     }
   }
   Submission.create({
-    bettor: req.body.bettor,
+    bettor: req.body.bettor
   })
     .then((bet) => {
       res.status(201).json(bet);
     })
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: 'Internal server error' });
     });
 });
 
@@ -208,7 +221,7 @@ function runServer(databaseUrl, port = PORT) {
           console.log(`Your app is listening on port ${port}`);
           resolve();
         })
-        .on("error", (err) => {
+        .on('error', (err) => {
           mongoose.disconnect();
           reject(err);
         });
@@ -218,7 +231,7 @@ function runServer(databaseUrl, port = PORT) {
 function closeServer() {
   return mongoose.disconnect().then(() => {
     return new Promise((resolve, reject) => {
-      console.log("Closing server");
+      console.log('Closing server');
       server.close((err) => {
         if (err) {
           return reject(err);
