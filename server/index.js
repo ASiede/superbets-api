@@ -9,6 +9,7 @@ require('dotenv').config();
 const bodyParser = require('body-parser');
 
 const { router: usersRouter } = require('../users');
+const { router: submissionRouter } = require('./routes/submissions');
 const { router: authRouter, localStrategy, jwtStrategy } = require('../auth');
 
 mongoose.Promise = global.Promise;
@@ -45,6 +46,7 @@ passport.use(localStrategy);
 passport.use(jwtStrategy);
 
 app.use('/users', usersRouter);
+app.use('/submission', submissionRouter);
 app.use('/auth/', authRouter);
 
 // const jwtAuth = passport.authenticate('jwt', { session: false });
@@ -85,7 +87,7 @@ const findEventByName = async (eventIds, name) => {
   }
 };
 
-// GET event by username and eventName
+// GET event by encoded username and eventName
 app.get('/eventname/:encoded', async (req, res) => {
   const { encoded } = req.params;
   const decoded = Buffer.from(encoded, 'base64').toString();
@@ -186,29 +188,6 @@ app.get('/submission/:id', (req, res) => {
     .then((submission) => res.status(200).json(submission))
     .catch((err) => {
       res.status(500).json({ message: `Internal server error: ${err}` });
-    });
-});
-
-// Post enpoint for new submission
-app.post('/submission', jsonParser, (req, res) => {
-  const requiredFields = ['bettor'];
-  for (let i = 0; i < requiredFields.length; i += 1) {
-    const field = requiredFields[i];
-    if (!(field in req.body)) {
-      const message = `Missing \`${field}\` in request body`;
-      console.error(message);
-      return res.status(400).send(message);
-    }
-  }
-  Submission.create({
-    bettor: req.body.bettor
-  })
-    .then((bet) => {
-      res.status(201).json(bet);
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
     });
 });
 

@@ -73,7 +73,7 @@ const submissionSchema = mongoose.Schema({
     required: true,
     unique: true
   },
-  bets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bet', required: true }],
+  bets: [{ type: mongoose.Schema.Types.Map, ref: 'Bet', required: true }],
   betEvent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BetEvent',
